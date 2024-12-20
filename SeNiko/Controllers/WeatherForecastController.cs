@@ -1,9 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
-
 namespace SeNiko.Controllers;
 
 [ApiController]
 [Route("[controller]")]
+[EnableRateLimiting("fixed")]
 public class WeatherForecastController : ControllerBase
 {
     private static readonly string[] Summaries = new[]
