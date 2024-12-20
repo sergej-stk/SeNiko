@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SeNiko", "SeNiko\SeNiko.csproj", "{CC7FD328-D8B9-4F60-B5DE-80633CBDA929}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{688E320F-9CA0-4DF8-A7C4-3F8992F3FE9E}"
+	ProjectSection(SolutionItems) = preProject
+		compose.yaml = compose.yaml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Source", "Source", "{A678B5C6-5A3B-4BA2-BCC3-EFA2C945858B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{022B6F52-6FAE-4B8C-868A-38183DF8D387}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SeNiko.Test", "SeNiko.Test\SeNiko.Test.csproj", "{CC6811DA-DDBA-416E-B87E-1BD629A41C33}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CC7FD328-D8B9-4F60-B5DE-80633CBDA929}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC7FD328-D8B9-4F60-B5DE-80633CBDA929}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC7FD328-D8B9-4F60-B5DE-80633CBDA929}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC7FD328-D8B9-4F60-B5DE-80633CBDA929}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC6811DA-DDBA-416E-B87E-1BD629A41C33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC6811DA-DDBA-416E-B87E-1BD629A41C33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC6811DA-DDBA-416E-B87E-1BD629A41C33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC6811DA-DDBA-416E-B87E-1BD629A41C33}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{022B6F52-6FAE-4B8C-868A-38183DF8D387} = {A678B5C6-5A3B-4BA2-BCC3-EFA2C945858B}
+		{CC7FD328-D8B9-4F60-B5DE-80633CBDA929} = {022B6F52-6FAE-4B8C-868A-38183DF8D387}
+		{CC6811DA-DDBA-416E-B87E-1BD629A41C33} = {022B6F52-6FAE-4B8C-868A-38183DF8D387}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,6 @@
+﻿services:
+  seniko:
+    image: seniko
+    build:
+      context: .
+      dockerfile: SeNiko/Dockerfile
