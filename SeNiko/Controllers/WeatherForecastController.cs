@@ -1,7 +1,8 @@
 namespace SeNiko.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[ApiVersion("1")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [EnableRateLimiting("fixed")]
 public class WeatherForecastController : ControllerBase
 {
