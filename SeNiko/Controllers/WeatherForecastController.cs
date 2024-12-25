@@ -1,9 +1,12 @@
+using Microsoft.AspNetCore.Authorization;
+
 namespace SeNiko.Controllers;
 
 [ApiController]
 [ApiVersion("1")]
 [Route("api/v{version:apiVersion}/[controller]")]
 [EnableRateLimiting("fixed")]
+[Authorize]
 public class WeatherForecastController : ControllerBase
 {
     private static readonly string[] Summaries = new[]

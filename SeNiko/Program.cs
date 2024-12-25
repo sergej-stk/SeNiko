@@ -25,6 +25,27 @@ try
             Log.Debug($"- QueueProcessingOrder: {options.QueueProcessingOrder}");
             Log.Debug($"- QueueLimit: {options.QueueLimit}");
         }));
+    
+    var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+    var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey is not configured"));
+    builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidIssuer = jwtSettings["Issuer"],
+                ValidAudience = jwtSettings["Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(secretKey),
+                ClockSkew = TimeSpan.Zero
+            };
+        });
 
     builder.Services.AddApiVersioning(options =>
     {
@@ -41,6 +62,31 @@ try
 
     builder.Services.AddSwaggerGen(options =>
     {
+        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        {
+            In = ParameterLocation.Header,
+            Description = "Please enter a valid token",
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            BearerFormat = "JWT",
+            Scheme = "Bearer"
+        });
+
+        options.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                new string[] { }
+            }
+        });
+        
         options.SwaggerDoc("v1", new OpenApiInfo()
         {
             Version = "1",
@@ -64,6 +110,8 @@ try
 
     app.UseHttpsRedirection();
 
+    app.UseAuthentication();
+    
     app.UseAuthorization();
 
     app.UseRateLimiter();
