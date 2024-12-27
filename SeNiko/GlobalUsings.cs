@@ -8,4 +8,5 @@ global using System.Text;
 global using Microsoft.AspNetCore.Authentication.JwtBearer;
 global using Microsoft.IdentityModel.Tokens;
 global using Asp.Versioning;
+global using Asp.Versioning.ApiExplorer;
 global using Microsoft.AspNetCore.Authorization;
