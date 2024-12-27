@@ -1,3 +1,7 @@
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+
 var builder = WebApplication.CreateBuilder(args);
 
 Log.Logger = new LoggerConfiguration()
@@ -25,6 +29,12 @@ try
             Log.Debug($"- QueueProcessingOrder: {options.QueueProcessingOrder}");
             Log.Debug($"- QueueLimit: {options.QueueLimit}");
         }));
+    
+    builder.Services.Configure<RouteOptions>(options =>
+    {
+        options.LowercaseUrls = true;
+        options.LowercaseQueryStrings = true;
+    });
 
     var jwtSettings = builder.Configuration.GetSection("JwtSettings");
     var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ??
@@ -50,7 +60,7 @@ try
 
     builder.Services.AddApiVersioning(options =>
     {
-        options.DefaultApiVersion = new ApiVersion(1, 0);
+        options.DefaultApiVersion = new ApiVersion(1);
         options.ReportApiVersions = true;
         options.AssumeDefaultVersionWhenUnspecified = true;
         options.ApiVersionReader = new UrlSegmentApiVersionReader();
@@ -59,8 +69,12 @@ try
         Log.Debug($"- ReportApiVersions: {options.ReportApiVersions}");
         Log.Debug($"- AssumeDefaultVersionWhenUnspecified: {options.AssumeDefaultVersionWhenUnspecified}");
         Log.Debug($"- ApiVersionReader: {options.ApiVersionReader}");
+    }).AddApiExplorer(options =>
+    {
+        options.GroupNameFormat = "'v'V";
+        options.SubstituteApiVersionInUrl = true;
     });
-
+    
     builder.Services.AddSwaggerGen(options =>
     {
         options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -121,8 +135,17 @@ try
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
-        app.UseSwaggerUI(c =>
-            c.SwaggerEndpoint($"/swagger/v1/swagger.json", $"v1"));
+        app.UseSwaggerUI(c => 
+        {
+            IApiVersionDescriptionProvider provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+
+            foreach (var item in provider.ApiVersionDescriptions)
+            {
+                c.SwaggerEndpoint($"/swagger/{item.GroupName}/swagger.json", $"API {item.GroupName}");
+            }
+
+            c.EnableDeepLinking();
+        });
     }
 
     app.MapControllers();
