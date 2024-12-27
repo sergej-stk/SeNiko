@@ -9,7 +9,7 @@ try
     Log.Information("Starting web host");
     Log.Debug($"- Environment: {builder.Environment.EnvironmentName}");
     Log.Debug($"- Arguments: {args}");
-    
+
     Log.Information("Serilog configured");
 
     builder.Services.AddRateLimiter(rateLimiterOptions => rateLimiterOptions
@@ -25,9 +25,10 @@ try
             Log.Debug($"- QueueProcessingOrder: {options.QueueProcessingOrder}");
             Log.Debug($"- QueueLimit: {options.QueueLimit}");
         }));
-    
+
     var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-    var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey is not configured"));
+    var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ??
+                                           throw new InvalidOperationException("JWT SecretKey is not configured"));
     builder.Services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -86,7 +87,7 @@ try
                 new string[] { }
             }
         });
-        
+
         options.SwaggerDoc("v1", new OpenApiInfo()
         {
             Version = "1",
@@ -111,7 +112,7 @@ try
     app.UseHttpsRedirection();
 
     app.UseAuthentication();
-    
+
     app.UseAuthorization();
 
     app.UseRateLimiter();
@@ -130,5 +131,10 @@ try
 }
 catch (Exception e)
 {
-    Log.Fatal(e, $"Host terminated unexpectedly");
+    Log.Fatal(e, $"An unexpected error has occured: {e.Message}");
+    throw;
+}
+finally
+{
+    Log.CloseAndFlush();
 }
