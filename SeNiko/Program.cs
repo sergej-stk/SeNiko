@@ -6,73 +6,116 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 try
 {
-    Log.Information("Starting web host");
-    Log.Debug($"- Environment: {builder.Environment.EnvironmentName}");
-    Log.Debug($"- Arguments: {args}");
-
-    Log.Information("Serilog configured");
-
-    builder.Services.AddRateLimiter(rateLimiterOptions => rateLimiterOptions
-        .AddFixedWindowLimiter(policyName: "fixed", options =>
-        {
-            options.PermitLimit = 4;
-            options.Window = TimeSpan.FromSeconds(12);
-            options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            options.QueueLimit = 2;
-            Log.Information($"RateLimiter configured");
-            Log.Debug($"- PermitLimit: {options.PermitLimit}");
-            Log.Debug($"- Window: {options.Window}");
-            Log.Debug($"- QueueProcessingOrder: {options.QueueProcessingOrder}");
-            Log.Debug($"- QueueLimit: {options.QueueLimit}");
-        }));
+    Log.Information("Starting application initialization");
+    Log.Information("Configuring application environment");
+    Log.Debug("Environment Configuration Details:");
+    Log.Debug($"- Environment Name: {builder.Environment.EnvironmentName}");
+    Log.Debug($"- Application Name: {builder.Environment.ApplicationName}");
+    Log.Debug($"- Content Root Path: {builder.Environment.ContentRootPath}");
+    Log.Debug($"- Command Line Arguments: {string.Join(" ", args)}");
     
+    var configSources = builder.Configuration.Sources
+        .OfType<JsonConfigurationSource>()
+        .Select(source => source.Path)
+        .ToList();
+    Log.Information($"- Configuration files: {configSources}");
+    
+    Log.Information("Configuring Rate Limiter");
+    builder.Services.AddRateLimiter(rateLimiterOptions => rateLimiterOptions
+        .AddFixedWindowLimiter(policyName: "FixedWindowThrottlingPolicy", options =>
+        {
+            Log.Debug("Configuring Fixed Window Limiter Settings:");
+            
+            options.PermitLimit = 4;
+            Log.Debug($"- Request Permit Limit: {options.PermitLimit} requests");
+            
+            options.Window = TimeSpan.FromSeconds(12);
+            Log.Debug($"- Time Window: {options.Window.TotalSeconds} seconds");
+            
+            options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            Log.Debug($"- Queue Processing Strategy: {options.QueueProcessingOrder}");
+            
+            options.QueueLimit = 2;
+            Log.Debug($"- Maximum Queue Size: {options.QueueLimit} requests");
+        }));
+    Log.Information("Rate Limiter configuration completed");
+    
+    Log.Information("Configuring URL formatting options");
     builder.Services.Configure<RouteOptions>(options =>
     {
-        options.LowercaseUrls = true;
+        Log.Debug("URL Formatting Configuration:");
+        
+        options.LowercaseUrls = true;        
+        Log.Debug("- URLs will be converted to lowercase");
+        
         options.LowercaseQueryStrings = true;
+        Log.Debug("- Query strings will be converted to lowercase");
     });
+    Log.Information("URL formatting configuration completed");
 
+    Log.Information("Configuring JWT Authentication");
     var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-    var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ??
-                                           throw new InvalidOperationException("JWT SecretKey is not configured"));
-    builder.Services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = new TokenValidationParameters
+    try 
+    {
+        var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ??
+                                               throw new InvalidOperationException("JWT SecretKey is not configured"));
+        Log.Debug("JWT Configuration Details:");
+        Log.Debug($"- Issuer: {jwtSettings["Issuer"]}");
+        Log.Debug($"- Audience: {jwtSettings["Audience"]}");
+        
+        builder.Services.AddAuthentication(options =>
             {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidIssuer = jwtSettings["Issuer"],
-                ValidAudience = jwtSettings["Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(secretKey),
-                ClockSkew = TimeSpan.Zero
-            };
-        });
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                Log.Debug($"- Authentication Scheme: {JwtBearerDefaults.AuthenticationScheme}");
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidIssuer = jwtSettings["Issuer"],
+                    ValidAudience = jwtSettings["Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(secretKey),
+                    ClockSkew = TimeSpan.Zero
+                };
+                Log.Debug("Token Validation Parameters configured");
+            });
+        Log.Information("JWT Authentication configuration completed");
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "Failed to configure JWT Authentication");
+        throw;
+    }
 
+    Log.Information("Configuring API Versioning");
     builder.Services.AddApiVersioning(options =>
     {
         options.DefaultApiVersion = new ApiVersion(1);
         options.ReportApiVersions = true;
         options.AssumeDefaultVersionWhenUnspecified = true;
         options.ApiVersionReader = new UrlSegmentApiVersionReader();
-        Log.Information("ApiVersioning configured");
-        Log.Debug($"- DefaultApiVersion: {options.DefaultApiVersion}");
-        Log.Debug($"- ReportApiVersions: {options.ReportApiVersions}");
-        Log.Debug($"- AssumeDefaultVersionWhenUnspecified: {options.AssumeDefaultVersionWhenUnspecified}");
-        Log.Debug($"- ApiVersionReader: {options.ApiVersionReader}");
+        Log.Debug("API Versioning Configuration:");
+        Log.Debug($"- Default API Version: v{options.DefaultApiVersion}");
+        Log.Debug($"- API Versions will be reported in response headers");
+        Log.Debug($"- Unspecified versions will default to v{options.DefaultApiVersion}");
+        Log.Debug($"- Version Reader Type: {options.ApiVersionReader.GetType().Name}");
     }).AddApiExplorer(options =>
     {
         options.GroupNameFormat = "'v'V";
         options.SubstituteApiVersionInUrl = true;
+        Log.Debug("API Explorer Configuration:");
+        Log.Debug($"- Group Name Format: {options.GroupNameFormat}");
+        Log.Debug("- API Version will be substituted in URL");
     });
     
+    Log.Information("Configuring Swagger Documentation");
     builder.Services.AddSwaggerGen(options =>
     {
+        Log.Debug("Configuring Swagger Security Definitions");
         options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
         {
             In = ParameterLocation.Header,
@@ -103,33 +146,51 @@ try
             Version = "1",
             Title = "v1 API",
             Description = "v1 API Description",
-
         });
+        Log.Debug("Swagger API Documentation configured for v1");
 
-        var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-        options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+        try
+        {
+            var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
+            options.IncludeXmlComments(xmlPath);
+            Log.Debug($"Included XML Comments from: {xmlPath}");
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to load XML documentation file");
+        }
     });
 
+    Log.Information("Configuring ASP.NET Core Services");
     builder.Services.AddControllers();
-    // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 
+    Log.Information("Building application");
     var app = builder.Build();
 
-    app.UseSerilogRequestLogging();
+    Log.Information("Configuring HTTP Request Pipeline");
+    app.UseSerilogRequestLogging(options =>
+    {
+        options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+    });
 
     app.UseHttpsRedirection();
+    Log.Debug("HTTPS Redirection enabled");
 
     app.UseAuthentication();
+    Log.Debug("Authentication middleware enabled");
 
     app.UseAuthorization();
+    Log.Debug("Authorization middleware enabled");
 
     app.UseRateLimiter();
+    Log.Debug("Rate Limiter middleware enabled");
 
-    // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())
     {
+        Log.Information("Configuring Swagger UI for Development environment");
         app.UseSwagger();
         app.UseSwaggerUI(c => 
         {
@@ -138,22 +199,27 @@ try
             foreach (var item in provider.ApiVersionDescriptions)
             {
                 c.SwaggerEndpoint($"/swagger/{item.GroupName}/swagger.json", $"API {item.GroupName}");
+                Log.Debug($"Added Swagger Endpoint for API {item.GroupName}");
             }
 
             c.EnableDeepLinking();
+            Log.Debug("Swagger UI Deep Linking enabled");
         });
     }
 
     app.MapControllers();
+    Log.Debug("Controller endpoints mapped");
 
+    Log.Information("Application configuration completed. Starting application...");
     app.Run();
 }
 catch (Exception e)
 {
-    Log.Fatal(e, $"An unexpected error has occured: {e.Message}");
+    Log.Fatal(e, "Application terminated unexpectedly");
     throw;
 }
 finally
 {
+    Log.Information("Shutting down application");
     Log.CloseAndFlush();
 }

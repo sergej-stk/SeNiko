@@ -3,7 +3,7 @@ namespace SeNiko.Controllers;
 [ApiController]
 [ApiVersion("1")]
 [Route("api/v{version:apiVersion}/[controller]")]
-[EnableRateLimiting("fixed")]
+[EnableRateLimiting("FixedWindowThrottlingPolicy")]
 [Authorize]
 public class WeatherForecastController : ControllerBase
 {
