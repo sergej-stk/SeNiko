@@ -144,8 +144,8 @@ try
         options.SwaggerDoc("v1", new OpenApiInfo()
         {
             Version = "1",
-            Title = "v1 API",
-            Description = "v1 API Description",
+            Title = "ꌗєиเк๏-คקเ",
+            Description = "SeNiko-API is a test monolith API designed to showcase and experiment with API development concepts. It provides a simple structure for learning and testing purposes.",
         });
         Log.Debug("Swagger API Documentation configured for v1");
 
