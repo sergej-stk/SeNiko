@@ -11,3 +11,4 @@ global using Asp.Versioning;
 global using Asp.Versioning.ApiExplorer;
 global using Microsoft.AspNetCore.Authorization;
 global using Microsoft.Extensions.Configuration.Json;
+global using System.ComponentModel.DataAnnotations;
