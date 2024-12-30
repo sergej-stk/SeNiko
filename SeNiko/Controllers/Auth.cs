@@ -1,3 +1,5 @@
+using Marten;
+
 namespace SeNiko.Controllers;
 
 [ApiController]
@@ -5,15 +7,22 @@ namespace SeNiko.Controllers;
 [Route("api/v{version:apiVersion}/[controller]")]
 [EnableRateLimiting("FixedWindowThrottlingPolicy")]
 [AllowAnonymous]
-public sealed class Auth : ControllerBase
+public sealed class AuthController : ControllerBase
 {
+    IDocumentStore _store;   
+    
+    public AuthController(IDocumentStore store)
+    {
+        _store = store;
+    }
+    
     [HttpPost("login")]
     public async Task<String> Login([FromBody] LoginRequest request)
     {
         return await Task.FromResult("");
     }
 
-    [HttpPost("signin")]
+    [HttpPost("register")]    
     public async Task<String> Signin([FromBody] LoginRequest request)
     {
         return await Task.FromResult("");

@@ -1,3 +1,6 @@
+using Marten;
+using Weasel.Core;
+
 var builder = WebApplication.CreateBuilder(args);
 
 Log.Logger = new LoggerConfiguration()
@@ -162,6 +165,11 @@ try
         }
     });
 
+    builder.Services.AddMarten(options => {
+        options.Connection("Server=127.0.0.1;Port=5432;Database=postgres;User Id=postgres;Password=;");
+        options.AutoCreateSchemaObjects = AutoCreate.All;
+    });
+    
     Log.Information("Configuring ASP.NET Core Services");
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
