@@ -14,3 +14,4 @@ global using Microsoft.Extensions.Configuration.Json;
 global using System.ComponentModel.DataAnnotations;
 global using Marten;
 global using Swashbuckle.AspNetCore.Annotations;
+global using Microsoft.AspNetCore.Identity.Data;

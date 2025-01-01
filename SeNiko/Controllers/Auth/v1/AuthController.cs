@@ -11,30 +11,30 @@ public sealed class AuthController(IDocumentStore store) : ControllerBase
     private IDocumentStore _store = store;
 
     [HttpPost("login")]
-    public async Task<String> Login([FromBody] LoginRequest request)
+    [SwaggerOperation(
+        Summary = "User login",
+        Description = "Authenticates a user and returns a JWT token.",
+        OperationId = "906262fa-732d-4728-af5c-4283bf028dcf")]
+    public async Task<LoginRequest> Login(
+        [FromBody, SwaggerParameter(Description = "Login Request", Required = true)] LoginRequest request, 
+        CancellationToken cancellationToken)
     {
-        return await Task.FromResult("");
+        return await Task.FromResult(request);
     }
 
     [HttpPost("register")]    
-    public async Task<String> Signin([FromBody] LoginRequest request)
+    [SwaggerOperation(
+        Summary = "User registration",
+        Description = "Registers a new user and returns the user details.",
+        OperationId = "1a2b3c4d-5678-9101-1121-314151617181")]
+    public async Task<RegisterRequest> Signin(
+        [FromBody, SwaggerParameter(Description = "Register Request", Required = true)] RegisterRequest request,
+        CancellationToken cancellationToken)
     {
-        return await Task.FromResult("");
-    }
-}
-
-public sealed class LoginRequest
-{
-    [Required]
-    [EmailAddress]
-    public string  email;
-    
-    [Required]
-    public required string password;
-
-    public LoginRequest(string email, string password)
-    {
-        this.email = email;
-        this.password = password;
+        await using var session = _store.LightweightSession();
+        session.Store(request);
+        await session.SaveChangesAsync(cancellationToken);
+        
+        return await Task.FromResult(request);
     }
 }
