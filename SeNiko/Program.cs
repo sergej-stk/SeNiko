@@ -118,6 +118,8 @@ try
     Log.Information("Configuring Swagger Documentation");
     builder.Services.AddSwaggerGen(options =>
     {
+        options.EnableAnnotations();
+        
         Log.Debug("Configuring Swagger Security Definitions");
         options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
         {

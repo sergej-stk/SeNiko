@@ -1,21 +1,15 @@
-using Marten;
+namespace SeNiko.Controllers.Auth.v1;
 
-namespace SeNiko.Controllers;
-
-[ApiController]
-[ApiVersion("1")]
-[Route("api/v{version:apiVersion}/[controller]")]
-[EnableRateLimiting("FixedWindowThrottlingPolicy")]
 [AllowAnonymous]
-public sealed class AuthController : ControllerBase
+[ApiVersion("1")]
+[Route("seniko/api/v{version:apiVersion}/[controller]")]
+[ApiController]
+[EnableRateLimiting("FixedWindowThrottlingPolicy")]
+[SwaggerTag(description:"User authentication endpoint")]
+public sealed class AuthController(IDocumentStore store) : ControllerBase
 {
-    IDocumentStore _store;   
-    
-    public AuthController(IDocumentStore store)
-    {
-        _store = store;
-    }
-    
+    private IDocumentStore _store = store;
+
     [HttpPost("login")]
     public async Task<String> Login([FromBody] LoginRequest request)
     {
