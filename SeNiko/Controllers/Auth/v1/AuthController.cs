@@ -1,3 +1,6 @@
+using SeNiko.Entities.Auth.v1;
+using SeNiko.Models.Auth.v1;
+
 namespace SeNiko.Controllers.Auth.v1;
 
 [AllowAnonymous]
@@ -27,14 +30,19 @@ public sealed class AuthController(IDocumentStore store) : ControllerBase
         Summary = "User registration",
         Description = "Registers a new user and returns the user details.",
         OperationId = "1a2b3c4d-5678-9101-1121-314151617181")]
-    public async Task<RegisterRequest> Signin(
-        [FromBody, SwaggerParameter(Description = "Register Request", Required = true)] RegisterRequest request,
+    public async Task<RegisterEntity> Signin(
+        [FromBody, SwaggerParameter(Description = "Register Request", Required = true)] CreateRegisterEntity request,
         CancellationToken cancellationToken)
     {
+        var newRegistration = new RegisterEntity(
+            request.UserName,
+            BCrypt.Net.BCrypt.HashPassword(request.Password),
+            request.Email);
+        
         await using var session = _store.LightweightSession();
-        session.Store(request);
+        session.Store(newRegistration);
         await session.SaveChangesAsync(cancellationToken);
         
-        return await Task.FromResult(request);
+        return await Task.FromResult(newRegistration);
     }
 }
