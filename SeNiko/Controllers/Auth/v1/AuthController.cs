@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using BCrypt.Net;
 using SeNiko.Entities.Auth.v1;
 using SeNiko.Models.Auth.v1;
 
@@ -13,6 +14,7 @@ namespace SeNiko.Controllers.Auth.v1;
 [SwaggerTag(description:"User authentication endpoint")]
 public sealed class AuthController(IDocumentStore store, IConfiguration configuration) : ControllerBase
 {
+    [AllowAnonymous]
     [HttpPost("login")]
     [SwaggerOperation(
         Summary = "User login",
@@ -26,13 +28,14 @@ public sealed class AuthController(IDocumentStore store, IConfiguration configur
         var user = session
             .Query<UserEntity>()
             .FirstOrDefault(x => x.Email == request.Email);
-
-        if ((user == null) || (user.Password != BCrypt.Net.BCrypt.HashPassword(request.Password))) 
+        
+        if ((user == null) || (!BCrypt.Net.BCrypt.Verify(user.Password, request.Password)))
             return Unauthorized();
 
-        return CreateToken(user.Id);
+        return Ok(CreateToken(user.Id));
     }
 
+    [AllowAnonymous]
     [HttpPost("register")]    
     [SwaggerOperation(
         Summary = "User registration",
@@ -44,7 +47,7 @@ public sealed class AuthController(IDocumentStore store, IConfiguration configur
     {
         var newRegistration = new UserEntity(
             request.UserName,
-            BCrypt.Net.BCrypt.HashPassword(request.Password),
+            BCrypt.Net.BCrypt.HashPassword(request.Password, SaltRevision.Revision2X),
             request.Email);
         
         await using var session = store.LightweightSession();
@@ -58,11 +61,11 @@ public sealed class AuthController(IDocumentStore store, IConfiguration configur
     {
         Claim[] claims =
         [
-            new Claim("userId", userId.ToString())
+            new("userId", userId.ToString())
         ];
 
         SymmetricSecurityKey securityKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(configuration.GetSection("JwtSettings:TokenKey").Value ?? throw new InvalidOperationException(message:"JWT Tokenkey not found"))
+            Encoding.UTF8.GetBytes(configuration.GetSection("JwtSettings:SecretKey").Value ?? throw new InvalidOperationException(message:"JWT Tokenkey not found"))
         );
         
         SigningCredentials credentials = new SigningCredentials(
