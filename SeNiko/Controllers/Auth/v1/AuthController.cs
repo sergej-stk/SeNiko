@@ -13,19 +13,24 @@ namespace SeNiko.Controllers.Auth.v1;
 [SwaggerTag(description:"User authentication endpoint")]
 public sealed class AuthController(IDocumentStore store, IConfiguration configuration) : ControllerBase
 {
-    private IDocumentStore _store = store;
-    private IConfiguration _configuration = configuration;
-
     [HttpPost("login")]
     [SwaggerOperation(
         Summary = "User login",
         Description = "Authenticates a user and returns a JWT token.",
         OperationId = "906262fa-732d-4728-af5c-4283bf028dcf")]
-    public async Task<String> Login(
+    public async Task<ActionResult<string>> Login(
         [FromBody, SwaggerParameter(Description = "Login Request", Required = true)] LoginRequest request, 
         CancellationToken cancellationToken)
     {
-        return await Task.FromResult("request");
+        await using var session = store.QuerySession();
+        var user = session
+            .Query<UserEntity>()
+            .FirstOrDefault(x => x.Email == request.Email);
+
+        if ((user == null) || (user.Password != BCrypt.Net.BCrypt.HashPassword(request.Password))) 
+            return Unauthorized();
+
+        return CreateToken(user.Id);
     }
 
     [HttpPost("register")]    
@@ -33,16 +38,16 @@ public sealed class AuthController(IDocumentStore store, IConfiguration configur
         Summary = "User registration",
         Description = "Registers a new user and returns the user details.",
         OperationId = "1a2b3c4d-5678-9101-1121-314151617181")]
-    public async Task<RegisterEntity> Signin(
-        [FromBody, SwaggerParameter(Description = "Register Request", Required = true)] CreateRegisterEntity request,
+    public async Task<UserEntity> Signin(
+        [FromBody, SwaggerParameter(Description = "Register Request", Required = true)] CreateUserEntity request,
         CancellationToken cancellationToken)
     {
-        var newRegistration = new RegisterEntity(
+        var newRegistration = new UserEntity(
             request.UserName,
             BCrypt.Net.BCrypt.HashPassword(request.Password),
             request.Email);
         
-        await using var session = _store.LightweightSession();
+        await using var session = store.LightweightSession();
         session.Store(newRegistration);
         await session.SaveChangesAsync(cancellationToken);
         
@@ -57,7 +62,7 @@ public sealed class AuthController(IDocumentStore store, IConfiguration configur
         ];
 
         SymmetricSecurityKey securityKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_configuration.GetSection("JwtSettings:TokenKey").Value ?? throw new InvalidOperationException(message:"JWT Tokenkey not found"))
+            Encoding.UTF8.GetBytes(configuration.GetSection("JwtSettings:TokenKey").Value ?? throw new InvalidOperationException(message:"JWT Tokenkey not found"))
         );
         
         SigningCredentials credentials = new SigningCredentials(

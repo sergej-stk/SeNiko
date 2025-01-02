@@ -1,6 +1,6 @@
 namespace SeNiko.Entities.Auth.v1;
 
-public class RegisterEntity(string username, string password, string email)
+public class UserEntity(string username, string password, string email)
 {
     [SwaggerSchema(Description = "Unique identifier of the user.")]
     public Guid Id { get; set; }

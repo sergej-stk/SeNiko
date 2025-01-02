@@ -1,6 +1,6 @@
 namespace SeNiko.Models.Auth.v1;
 
-public class CreateRegisterEntity
+public class CreateUserEntity
 {
     [Required]
     [SwaggerSchema(Description = "Username chosen by the user for registration.")]
