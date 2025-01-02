@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using SeNiko.Entities.Auth.v1;
 using SeNiko.Models.Auth.v1;
 
@@ -9,20 +11,21 @@ namespace SeNiko.Controllers.Auth.v1;
 [ApiController]
 [EnableRateLimiting("FixedWindowThrottlingPolicy")]
 [SwaggerTag(description:"User authentication endpoint")]
-public sealed class AuthController(IDocumentStore store) : ControllerBase
+public sealed class AuthController(IDocumentStore store, IConfiguration configuration) : ControllerBase
 {
     private IDocumentStore _store = store;
+    private IConfiguration _configuration = configuration;
 
     [HttpPost("login")]
     [SwaggerOperation(
         Summary = "User login",
         Description = "Authenticates a user and returns a JWT token.",
         OperationId = "906262fa-732d-4728-af5c-4283bf028dcf")]
-    public async Task<LoginRequest> Login(
+    public async Task<String> Login(
         [FromBody, SwaggerParameter(Description = "Login Request", Required = true)] LoginRequest request, 
         CancellationToken cancellationToken)
     {
-        return await Task.FromResult(request);
+        return await Task.FromResult("request");
     }
 
     [HttpPost("register")]    
@@ -44,5 +47,33 @@ public sealed class AuthController(IDocumentStore store) : ControllerBase
         await session.SaveChangesAsync(cancellationToken);
         
         return await Task.FromResult(newRegistration);
+    }
+
+    private String CreateToken(Guid userId)
+    {
+        Claim[] claims =
+        [
+            new Claim("userId", userId.ToString())
+        ];
+
+        SymmetricSecurityKey securityKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(_configuration.GetSection("JwtSettings:TokenKey").Value ?? throw new InvalidOperationException(message:"JWT Tokenkey not found"))
+        );
+        
+        SigningCredentials credentials = new SigningCredentials(
+                securityKey, 
+                SecurityAlgorithms.HmacSha512
+            );
+
+        SecurityTokenDescriptor descriptor = new SecurityTokenDescriptor()
+        {
+            Subject = new ClaimsIdentity(claims),
+            SigningCredentials = credentials,
+            Expires = DateTime.UtcNow.AddDays(1),
+        };
+        
+        JwtSecurityTokenHandler handler = new JwtSecurityTokenHandler();
+        var token = handler.CreateToken(descriptor);
+        return handler.WriteToken(token);
     }
 }
